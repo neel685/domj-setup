@@ -1,38 +1,57 @@
-#!/bin/bash
-set -e
+#!/usr/bin/env bash
+set -euo pipefail
 
-DOMSERVER_CONTAINER="domserver"
 COMPOSE_FILE="docker-compose.yaml"
+DOMSERVER_CONTAINER="domserver"
+WAIT_SECONDS=2
+MAX_WAIT=120
 
 echo "[+] Starting mariadb and domserver..."
 sudo docker compose up -d mariadb domserver
 
 echo "[+] Waiting for domserver to initialize..."
-sleep 10
-
-echo "[+] Finding restapi.secret inside domserver..."
-SECRET_PATH=$(sudo docker exec "$DOMSERVER_CONTAINER" find /opt -name restapi.secret 2>/dev/null | head -n1)
-
-if [ -z "$SECRET_PATH" ]; then
-  echo "[-] Could not find restapi.secret in domserver!"
-  exit 1
-fi
-
-echo "[+] Found restapi.secret at $SECRET_PATH"
-
-JUDGE_PW=$(sudo docker exec "$DOMSERVER_CONTAINER" awk '{print $2}' "$SECRET_PATH")
-
-if [ -z "$JUDGE_PW" ]; then
-  echo "[-] Failed to read judgedaemon password!"
-  exit 1
-fi
-
-echo "[+] Retrieved judgedaemon password."
-
-echo "[+] Updating docker-compose.yaml with new judgedaemon password..."
-for i in 0 1 2 3; do
-  yq e -i ".services[\"judgehost-$i\"].environment[] |= sub(\"^JUDGEDAEMON_PASSWORD=.*\", \"JUDGEDAEMON_PASSWORD=$JUDGE_PW\")" "$COMPOSE_FILE"
+elapsed=0
+while [ $elapsed -lt $MAX_WAIT ]; do
+  if sudo docker exec "$DOMSERVER_CONTAINER" test -f /opt/domjudge/domserver/etc/restapi.secret; then
+    break
+  fi
+  sleep $WAIT_SECONDS
+  elapsed=$((elapsed + WAIT_SECONDS))
 done
 
-echo "[+] Starting all services..."
-sudo docker compose up -d
+if [ $elapsed -ge $MAX_WAIT ]; then
+  echo "[-] Timeout: restapi.secret not found in domserver after $MAX_WAIT seconds."
+  exit 1
+fi
+
+# Extract judgehost password (ignore comments, take 4th field)
+JUDGEHOST_PASSWORD=$(sudo docker exec "$DOMSERVER_CONTAINER" bash -c "grep -v '^#' /opt/domjudge/domserver/etc/restapi.secret | awk '{print \$4}'")
+
+# Extract admin password
+ADMIN_PASSWORD=$(sudo docker exec "$DOMSERVER_CONTAINER" cat /opt/domjudge/domserver/etc/initial_admin_password.secret)
+
+echo
+echo "========================================"
+echo " Judgehost password: $JUDGEHOST_PASSWORD"
+echo " Admin password    : $ADMIN_PASSWORD"
+echo "========================================"
+echo
+
+# Update all judgehost-* services in the YAML using sed (array-style)
+echo "[+] Updating docker-compose.yaml..."
+for svc in $(sudo docker compose config --services | grep judgehost); do
+    sudo sed -i "s|JUDGEDAEMON_PASSWORD=.*|JUDGEDAEMON_PASSWORD=$JUDGEHOST_PASSWORD|" "$COMPOSE_FILE"
+done
+
+# Restart judgehosts
+echo "[+] Restarting all judgehosts..."
+sudo docker compose up -d $(sudo docker compose config --services | grep judgehost)
+
+# Reset YAML permissions so user can edit normally
+sudo chown $(whoami):$(whoami) "$COMPOSE_FILE"
+
+echo "[+] Setup complete."
+echo "------------------------------------------------"
+echo " Judgehost password : $JUDGEHOST_PASSWORD"
+echo " Admin password     : $ADMIN_PASSWORD"
+echo "------------------------------------------------"

@@ -1,7 +1,6 @@
 networks:
   domjudge:
     name: domjudge
-
 services:
   mariadb:
     container_name: mariadb
@@ -16,7 +15,6 @@ services:
       - MYSQL_PASSWORD=djpw
       - MYSQL_DATABASE=domjudge
     command: --max-connections=1000
-
   domserver:
     container_name: domserver
     image: domjudge/domserver:latest
@@ -35,7 +33,6 @@ services:
       - MYSQL_USER=domjudge
       - MYSQL_PASSWORD=djpw
       - MYSQL_DATABASE=domjudge
-
   judgehost-0:
     container_name: judgehost-0
     image: domjudge/judgehost:latest
@@ -49,8 +46,7 @@ services:
       - domserver
     environment:
       - DAEMON_ID=0
-      - JUDGEDAEMON_PASSWORD=RssmHkZQu6o7q8fGXYKSX8N80htxFwGm
-
+      - JUDGEDAEMON_PASSWORD=VyByjxDLYGac9ydsDSLwzRH0CeeOJ+h6
   judgehost-1:
     container_name: judgehost-1
     image: domjudge/judgehost:latest
@@ -64,8 +60,7 @@ services:
       - domserver
     environment:
       - DAEMON_ID=1
-      - JUDGEDAEMON_PASSWORD=RssmHkZQu6o7q8fGXYKSX8N80htxFwGm
-
+      - JUDGEDAEMON_PASSWORD=VyByjxDLYGac9ydsDSLwzRH0CeeOJ+h6
   judgehost-2:
     container_name: judgehost-2
     image: domjudge/judgehost:latest
@@ -79,8 +74,7 @@ services:
       - domserver
     environment:
       - DAEMON_ID=2
-      - JUDGEDAEMON_PASSWORD=RssmHkZQu6o7q8fGXYKSX8N80htxFwGm
-
+      - JUDGEDAEMON_PASSWORD=VyByjxDLYGac9ydsDSLwzRH0CeeOJ+h6
   judgehost-3:
     container_name: judgehost-3
     image: domjudge/judgehost:latest
@@ -94,4 +88,4 @@ services:
       - domserver
     environment:
       - DAEMON_ID=3
-      - JUDGEDAEMON_PASSWORD=RssmHkZQu6o7q8fGXYKSX8N80htxFwGm
+      - JUDGEDAEMON_PASSWORD=VyByjxDLYGac9ydsDSLwzRH0CeeOJ+h6
