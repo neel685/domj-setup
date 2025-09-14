@@ -21,7 +21,7 @@ services:
     container_name: domserver
     image: domjudge/domserver:latest
     volumes:
-      - /sys/fs/cgroup:/sys/fs/cgroup:ro
+      - /sys/fs/cgroup:/sys/fs/cgroup:rw
     networks:
       - domjudge
     ports:
@@ -42,7 +42,7 @@ services:
     privileged: true
     hostname: judgedaemon-0
     volumes:
-      - /sys/fs/cgroup:/sys/fs/cgroup:ro
+      - /sys/fs/cgroup:/sys/fs/cgroup:rw
     networks:
       - domjudge
     depends_on:
@@ -57,7 +57,7 @@ services:
     privileged: true
     hostname: judgedaemon-1
     volumes:
-      - /sys/fs/cgroup:/sys/fs/cgroup:ro
+      - /sys/fs/cgroup:/sys/fs/cgroup:rw
     networks:
       - domjudge
     depends_on:
@@ -72,7 +72,7 @@ services:
     privileged: true
     hostname: judgedaemon-2
     volumes:
-      - /sys/fs/cgroup:/sys/fs/cgroup:ro
+      - /sys/fs/cgroup:/sys/fs/cgroup:rw
     networks:
       - domjudge
     depends_on:
@@ -87,7 +87,7 @@ services:
     privileged: true
     hostname: judgedaemon-3
     volumes:
-      - /sys/fs/cgroup:/sys/fs/cgroup:ro
+      - /sys/fs/cgroup:/sys/fs/cgroup:rw
     networks:
       - domjudge
     depends_on:
